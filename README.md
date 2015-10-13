@@ -6,7 +6,7 @@ Workshop content for the Readify QLD AWS Knowledge Share session
 * [AWS a-b-c's](https://speakerdeck.com/andrewabest/aws-a-b-cs)
 * [Exercise One - DIY](https://github.com/andrewabest/AWS-Workshop/blob/master/Exercise1.md)
 * CloudFormation Introduction
-* Exercise Two - CloudFormation
+* [Exercise Two - CloudFormation](https://github.com/andrewabest/AWS-Workshop/blob/master/Exercise2.md)
 * Question Time
 * DSC a-b-c's
 * Exercise Three - DSC DIY
