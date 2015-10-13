@@ -27,3 +27,5 @@ In this exercise we will build a cloud formation template to provision the secur
 10. If something fails, analyse the error. What went wrong? Double check your template, and the template documentation. Feel free to grab someone to rubber duck!
 11. If it is all green, jump into the EC2 section and try to remote into your instance
 12. Great success!
+
+Note: If you installed the [Visual Studio Tooling](http://blog.kloud.com.au/2015/05/18/create-aws-cloudformation-templates-with-visual-studio/) you can use an "AWS CloudFormation project" to work with your template, which will give you some intellisense out of the box.
