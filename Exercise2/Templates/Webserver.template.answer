@@ -1,0 +1,117 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+
+    "Description": "A template to deploy a simple web server to a single subnet.",
+
+    "Parameters": {
+        "VpcId": {
+            "Description": "The Vpc to deploy the Webserver infrastructure into.",
+            "Type": "String"
+        },
+        "Version": {
+            "Description": "The package version that contains this CloudFormation template.",
+            "Type": "String"
+        },
+        "Environment": {
+            "Type": "String",
+            "Default": "Development"
+        },
+        "KeyPairName": {
+            "Description": "The EC2 key pair used to launch web instances",
+            "Type": "AWS::EC2::KeyPair::KeyName"
+        },
+        "WebserverImageId": {
+            "Description": "The EC2 AmiId to use for web",
+            "Type": "String"
+        },
+        "WebserverInstanceType": {
+            "Description": "The EC2 instance type to use for web",
+            "Type": "String"
+        },
+        "WebserverSubnetId": {
+            "Description": "The PUBLIC subnet belonging to availability zone one into which the instance will be launched",
+            "Type": "String"
+        },
+		"ResourcePrefix" : {
+			"Description": "Used to prefix a unique name to resources where applicable",
+			"Type": "String"
+		}
+    },
+
+    "Resources": {
+		"WebSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Inbound Octopus, RDP and HTTP (web and healthcheck)",
+                "VpcId": { "Ref": "VpcId" },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "10933",
+                        "ToPort": "10933",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+					{
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+					{
+                        "IpProtocol": "tcp",
+                        "FromPort": "3389",
+                        "ToPort": "3389",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+        "WebServer": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "ImageId": { "Ref": "WebserverImageId" },
+                "InstanceType": { "Ref": "WebserverInstanceType" },
+                "SubnetId": { "Ref": "WebserverSubnetId" },
+                "SecurityGroupIds": [ { "Fn::GetAtt": [ "WebSecurityGroup", "GroupId" ] } ],
+                "KeyName": { "Ref": "KeyPairName" },
+                "BlockDeviceMappings": [
+                    {
+                        "DeviceName": "/dev/sda1",
+                        "Ebs": {
+                            "VolumeSize": "50",
+                            "VolumeType": "gp2"
+                        }
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "",
+                                [
+									{
+                                        "Ref": "ResourcePrefix"
+                                    },
+									"-",
+                                    {
+                                        "Ref": "Environment"
+                                    },
+                                    "-WebServer"
+                                ]
+                            ]
+                        }
+                    },
+                    {
+                        "Key": "Version",
+                        "Value": { "Ref": "Version" }
+                    },
+                    {
+                        "Key": "Environment",
+                        "Value": { "Ref": "Environment" }
+                    }
+                ]
+            }
+        }
+    }
+}
