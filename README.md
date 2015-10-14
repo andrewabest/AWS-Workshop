@@ -11,6 +11,6 @@ Workshop content for the Readify QLD AWS Knowledge Share session
 * [DSC a-b-c's](https://speakerdeck.com/andrewabest/dsc-a-b-cs)
 * [Exercise Three - DSC DIY](https://github.com/andrewabest/AWS-Workshop/blob/master/Exercise3.md)
 * Question Time
-* Exercise Four - CloudFormation + DSC
+* Exercise Four - [CloudFormation + DSC](https://github.com/andrewabest/AWS-Workshop/blob/master/Exercise4.md)
 * Exercise Five - CloudFormation + DSC + Octopus (Form like Voltron)
 * Discussion time - Automating infrastructure
