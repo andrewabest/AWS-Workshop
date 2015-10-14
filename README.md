@@ -8,7 +8,7 @@ Workshop content for the Readify QLD AWS Knowledge Share session
 * CloudFormation Introduction ([supplementary information](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-whatis-howdoesitwork.html))
 * [Exercise Two - CloudFormation](https://github.com/andrewabest/AWS-Workshop/blob/master/Exercise2.md)
 * Question Time
-* DSC a-b-c's
+* [DSC a-b-c's](https://speakerdeck.com/andrewabest/dsc-a-b-cs)
 * Exercise Three - DSC DIY
 * Question Time
 * Exercise Four - CloudFormation + DSC
