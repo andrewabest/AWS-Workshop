@@ -26,7 +26,7 @@ function GenerateConfigFileS3Key($environment, $release, $filename)
 & {
     $scriptPath = [System.IO.Path]::GetDirectoryName($myInvocation.PSCommandPath)
 
-    . .\Private\Parameters.ps1
+    . .\Parameters.ps1
 
 	# Lower case variables sensitive to casing
 	$Parameters['CloudFormationStackName'] = $Parameters['CloudFormationStackName'].ToLowerInvariant()
@@ -41,16 +41,16 @@ function GenerateConfigFileS3Key($environment, $release, $filename)
 	############################################################################################################################
 
 	# Create an S3 bucket to upload our templates and scripts to.
-	if (-Not (Get-S3Bucket -BucketName $Parameters['S3BucketName'] -AccessKey $Parameters['AWSAccessKey'] -SecretKey $Parameters['AWSSecretKey'] -Region $Parameters['AWSRegion']))
+	if (-Not (Get-S3Bucket -BucketName $Parameters['S3BucketName'] -Region $Parameters['AWSRegion'] -ProfileName "AWSWorkshop"))
 	{
 		Write-Output "Creating S3 bucket..."
-		New-S3Bucket -BucketName $Parameters['S3BucketName'] -AccessKey $Parameters['AWSAccessKey'] -SecretKey $Parameters['AWSSecretKey'] -Region $Parameters['AWSRegion']
+		New-S3Bucket -BucketName $Parameters['S3BucketName'] -Region $Parameters['AWSRegion'] -ProfileName "AWSWorkshop"
 	}
 
 	# CloudFormation templates
 	Write-Output "Uploading CloudFormation templates..."
 	$webserverTemplateS3BucketKey = GenerateConfigFileS3Key -environment $Parameters['Environment'] -release $Parameters['Version'] -filename "Webserver.template"
-	Write-S3Object -BucketName: $Parameters['S3BucketName'] -Key $webserverTemplateS3BucketKey -File $scriptPath\Templates\Webserver.template  -AccessKey $Parameters['AWSAccessKey'] -SecretKey $Parameters['AWSSecretKey'] -Region $Parameters['AWSRegion']
+	Write-S3Object -BucketName: $Parameters['S3BucketName'] -Key $webserverTemplateS3BucketKey -File $scriptPath\Templates\Webserver.template -Region $Parameters['AWSRegion'] -ProfileName "AWSWorkshop"
 	
 	############################################################################################################################
 	#
@@ -64,7 +64,7 @@ function GenerateConfigFileS3Key($environment, $release, $filename)
 	$stack = $null
 	try 
 	{
-		$stack = Get-CFNStack -StackName $Parameters['CloudFormationStackName'] -AccessKey $Parameters['AWSAccessKey'] -SecretKey $Parameters['AWSSecretKey'] -Region $Parameters['AWSRegion']
+		$stack = Get-CFNStack -StackName $Parameters['CloudFormationStackName'] -Region $Parameters['AWSRegion'] -ProfileName "AWSWorkshop"
 	} 
 	catch	
 	{ 
@@ -86,18 +86,18 @@ function GenerateConfigFileS3Key($environment, $release, $filename)
 	{
 		Write-Output "Creating new CFN stack $stackName"
 
-		New-CFNStack -Capability "CAPABILITY_IAM" -StackName $stackName -TemplateURL $webserverTemplateUrl -Parameters $stackParameters -AccessKey $Parameters['AWSAccessKey'] -SecretKey $Parameters['AWSSecretKey'] -Region $Parameters['AWSRegion']
+		New-CFNStack -Capability "CAPABILITY_IAM" -StackName $stackName -TemplateURL $webserverTemplateUrl -Parameters $stackParameters -Region $Parameters['AWSRegion'] -ProfileName "AWSWorkshop"
 	} 
 	else 
 	{
 		Write-Output "Updating existing CFN stack $stackName"
 
-		Update-CFNStack -Capability "CAPABILITY_IAM" -StackName $stackName -TemplateURL $webserverTemplateUrl -Parameters $stackParameters -AccessKey $Parameters['AWSAccessKey'] -SecretKey $Parameters['AWSSecretKey'] -Region $Parameters['AWSRegion']
+		Update-CFNStack -Capability "CAPABILITY_IAM" -StackName $stackName -TemplateURL $webserverTemplateUrl -Parameters $stackParameters -Region $Parameters['AWSRegion'] -ProfileName "AWSWorkshop"
 	}
 
 	while($true)
 	{
-		$stack = Get-CFNStack -StackName $stackName -AccessKey $Parameters['AWSAccessKey'] -SecretKey $Parameters['AWSSecretKey'] -Region $Parameters['AWSRegion']
+		$stack = Get-CFNStack -StackName $stackName -Region $Parameters['AWSRegion'] -ProfileName "AWSWorkshop"
 
 		if ($stack.StackStatus -eq [Amazon.CloudFormation.StackStatus]::CREATE_COMPLETE -or $stack.StackStatus -eq [Amazon.CloudFormation.StackStatus]::UPDATE_COMPLETE)
 		{
