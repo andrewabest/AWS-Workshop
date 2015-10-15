@@ -1,8 +1,13 @@
 # AWS-Workshop
 Workshop content for the Readify QLD AWS Knowledge Share session
 
+## Prerequisites
+
+You will need to have installed [The AWS.NET SDK](https://aws.amazon.com/sdk-for-net/). You could optionally install The [AWS VS Tooling](http://aws.amazon.com/visualstudio/) instead which includes the SDK, and also gives you intellisense for CloudFormation templates.
+
 ## Itinerary
 
+* Working securely in AWS
 * [AWS a-b-c's](https://speakerdeck.com/andrewabest/aws-a-b-cs)
 * [Exercise One - DIY](https://github.com/andrewabest/AWS-Workshop/blob/master/Exercise1.md)
 * CloudFormation Introduction ([supplementary information](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-whatis-howdoesitwork.html))
