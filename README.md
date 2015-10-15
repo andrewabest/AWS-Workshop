@@ -17,7 +17,7 @@ You will need to have installed [The AWS.NET SDK](https://aws.amazon.com/sdk-for
 * [Exercise Three - DSC DIY](https://github.com/andrewabest/AWS-Workshop/blob/master/Exercise3.md)
 * Question Time
 * [Exercise Four - CloudFormation + DSC](https://github.com/andrewabest/AWS-Workshop/blob/master/Exercise4.md)
-* Exercise Five - CloudFormation + DSC + Octopus (Form like Voltron)
+* [Exercise Five - CloudFormation + DSC + Octopus (Form like Voltron)](https://github.com/andrewabest/AWS-Workshop/blob/master/Exercise5.md)
 * Discussion time - Automating infrastructure
 
 ### Disclaimer
