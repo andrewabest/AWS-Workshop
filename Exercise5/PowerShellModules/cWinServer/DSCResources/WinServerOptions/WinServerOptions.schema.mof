@@ -1,0 +1,8 @@
+﻿[ClassVersion("1.0.0.0"), FriendlyName("WinServerOptions")]
+class WinServerOptions : OMI_BaseResource
+{
+	[Write, ValueMap{"Present","Absent"}, Values{"Present","Absent"}] String Ensure;
+	[Key, Description("The name for the setup. Can just be the server name")] String Name;
+	[Write, Description("The Windows Server culture")] String Culture;
+	[Write, Description("The Windows Server Timezone")] String TimeZone;
+};

@@ -217,11 +217,25 @@ function Invoke-AndAssert {
 # After the Tentacle is registered with Octopus, Tentacle listens on a TCP port, and Octopus connects to it. The Octopus server
 # needs to know the public IP address to use to connect to this Tentacle instance. Is there a way in Windows Azure in which we can 
 # know the public IP/host name of the current machine?
+
 function Get-MyPublicIPAddress
 {
     Write-Verbose "Getting public IP address"
     $downloader = new-object System.Net.WebClient
-    $ip = $downloader.DownloadString("http://ifconfig.me/ip")
+    $ip = ""
+	$attempts = 0
+
+	while ([string]::IsNullOrWhiteSpace($ip) -and $attempts -lt 5)
+	{
+		$ip = $downloader.DownloadString("https://api.ipify.org/")
+
+        if ([string]::IsNullOrWhiteSpace($ip))
+        {
+            $attempts++
+		    Start-Sleep -s 10
+        }
+	}
+
     return $ip
 }
   

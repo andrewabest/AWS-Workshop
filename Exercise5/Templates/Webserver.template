@@ -1,0 +1,507 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+
+    "Description": "A template to deploy two web servers across two availability zones with a load balancer for directing traffic across each.",
+
+    "Parameters": {
+        "S3BucketName": {
+            "Description": "The S3 Bucket Name used in URL's to specify authentication against.",
+            "Type": "String"
+        },
+        "VpcId": {
+            "Description": "The Vpc to deploy the Webserver infrastructure into.",
+            "Type": "String"
+        },
+        "PowerShellModulesBundleUrl": {
+            "Description": "The URL to a ZIP file containing any PowerShell modules required by this CloudFormation template.",
+            "Type": "String"
+        },
+        "BootstrapperScriptBundleUrl": {
+            "Description": "The URL to a ZIP file containing the PowerShell script package to bootstrap EC2 instances in this CloudFormation template.",
+            "Type": "String"
+        },
+        "Timestamp": {
+            "Description": "When this CloudFormation stack was last updated.",
+            "Type": "String"
+        },
+        "Version": {
+            "Description": "The package version that contains this CloudFormation template.",
+            "Type": "String"
+        },
+        "Environment": {
+            "Type": "String",
+            "Default": "Development"
+        },
+        "InstanceProfile": {
+            "Type": "String",
+            "Description": "The InstanceProfile used to attach to the EC2 instance, in order to authenticate to resources."
+        },
+        "BootstrapperRole": {
+            "Description": "The rolename used by the InstanceProfile, to secure resources.",
+            "Type": "String"
+        },
+        "KeyPairName": {
+            "Description": "The EC2 key pair used to launch web instances",
+            "Type": "AWS::EC2::KeyPair::KeyName"
+        },
+        "WebserverImageId": {
+            "Description": "The EC2 AmiId to use for web",
+            "Type": "String",
+            "Default": "ami-f9760dc3"
+        },
+        "WebserverInstanceType": {
+            "Description": "The EC2 instance type to use for web",
+            "Type": "String",
+            "Default": "t2.small"
+        },
+        "WebserverSubnetIdAzOne": {
+            "Description": "The PUBLIC subnet belonging to availability zone one into which the instance will be launched",
+            "Type": "String"
+        },
+        "WebserverSubnetIdAzTwo": {
+            "Description": "The PUBLIC subnet belonging to availability zone two into which the instance will be launched",
+            "Type": "String"
+        },
+        "LoadBalancerSubnetIdAzOne": {
+            "Description": "The PUBLIC IG-connected subnet belonging to availability zone one that the load balancer will belong to",
+            "Type": "String"
+        },
+        "LoadBalancerSubnetIdAzTwo": {
+            "Description": "The PUBLIC IG-connected subnet belonging to availability zone two that the load balancer will belong to",
+            "Type": "String"
+        },
+		    "ResourcePrefix" : {
+			    "Description": "Used to prefix a unique name to resources where applicable",
+			    "Type": "String"
+		    }
+    },
+
+    "Resources": {
+		"WebSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Inbound Octopus, RDP and HTTP (web and healthcheck)",
+                "VpcId": { "Ref": "VpcId" },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "10933",
+                        "ToPort": "10933",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+					          {
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+					          {
+                        "IpProtocol": "tcp",
+                        "FromPort": "81",
+                        "ToPort": "81",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+					          {
+                        "IpProtocol": "tcp",
+                        "FromPort": "3389",
+                        "ToPort": "3389",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+        "WebServerAzOne": {
+            "Type": "AWS::EC2::Instance",
+            "Metadata": {
+                "AWS::CloudFormation::Init": {
+                    "config": {
+                        "sources": {
+                            "C:\\Program Files\\WindowsPowerShell\\Modules": {
+                                "Ref": "PowerShellModulesBundleUrl"
+                            },
+                            "c:\\cfn\\Zephyr\\Scripts": {
+                                "Ref": "BootstrapperScriptBundleUrl"
+                            }
+                        },
+                        "files": {
+                            "c:\\cfn\\cfn-hup.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[main]\n",
+                                            "stack=",
+                                            {
+                                                "Ref": "AWS::StackId"
+                                            },
+                                            "\n",
+                                            "region=",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n"
+                                        ]
+                                    ]
+                                }
+                            },
+                            "c:\\cfn\\hooks.d\\cfn-auto-reloader.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[cfn-auto-reloader-hook]\n",
+                                            "triggers=post.update\n",
+                                            "path=Resources.WebServerAzOne.Metadata.AWS::CloudFormation::Init\n",
+                                            "action=cfn-init.exe -v -s ",
+                                            {
+                                                "Ref": "AWS::StackId"
+                                            },
+                                            " -r WebServerAzOne",
+                                            " --region ",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n"
+                                        ]
+                                    ]
+                                }
+                            },
+                            "c:\\cfn\\hooks.d\\cfn-teardown.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[cfn-teardown-hook]\n",
+                                            "triggers=post.remove\n",
+                                            "path=Resources.WebServerAzOne.Metadata.AWS::CloudFormation::Init\n",
+                                            "action=powershell.exe -Command C:\\cfn\\Zephyr\\Scripts\\Teardown.ps1\n"
+                                        ]
+                                    ]
+                                }
+                            }
+                        },
+                        "commands": {
+                            "00-set-execution-policy": {
+                                "command": "powershell.exe -Command Set-ExecutionPolicy Unrestricted -Force",
+                                "waitAfterCompletion": "0"
+                            },
+                            "01-configure-webserver": {
+                                "command": "powershell.exe -Command C:\\cfn\\Zephyr\\Scripts\\ConfigureWebserver.ps1",
+                                "waitAfterCompletion": "0"
+                            }
+                        },
+                        "services": {
+                            "windows": {
+                                "cfn-hup": {
+                                    "enabled": "true",
+                                    "ensureRunning": "true",
+                                    "files": [
+                                        "c:\\cfn\\cfn-hup.conf",
+                                        "c:\\cfn\\hooks.d\\cfn-auto-reloader.conf"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "AWS::CloudFormation::Authentication": {
+                    "S3AccessCreds": {
+                        "type": "S3",
+                        "roleName": { "Ref": "BootstrapperRole" },
+                        "buckets": [ { "Ref": "S3BucketName" } ]
+                    }
+                }
+            },
+            "Properties": {
+                "ImageId": { "Ref": "WebserverImageId" },
+                "InstanceType": { "Ref": "WebserverInstanceType" },
+                "SubnetId": { "Ref": "WebserverSubnetIdAzOne" },
+                "SecurityGroupIds": [ { "Fn::GetAtt": [ "WebSecurityGroup", "GroupId" ] } ],
+                "IamInstanceProfile": { "Ref": "InstanceProfile" },
+                "KeyName": { "Ref": "KeyPairName" },
+                "BlockDeviceMappings": [
+                    {
+                        "DeviceName": "/dev/sda1",
+                        "Ebs": {
+                            "VolumeSize": "50",
+                            "VolumeType": "gp2"
+                        }
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "<script>\n",
+                                "wevtutil.exe set-log \"Microsoft-Windows-DSC/Analytic\" /e:true /q:true \n",
+                                "wevtutil.exe set-log \"Microsoft-Windows-DSC/Debug\" /e:true /q:true \n",
+                                "cfn-init.exe -v -s ",
+                                {
+                                    "Ref": "AWS::StackId"
+                                },
+                                " -r WebServerAzOne",
+                                " --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "\n",
+
+                                "</script>"
+                            ]
+                        ]
+                    }
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "",
+                                [
+									{
+                                        "Ref": "ResourcePrefix"
+                                    },
+									"-",
+                                    {
+                                        "Ref": "Environment"
+                                    },
+                                    "-WebServerOne"
+                                ]
+                            ]
+                        }
+                    },
+                    {
+                        "Key": "Version",
+                        "Value": { "Ref": "Version" }
+                    },
+                    {
+                        "Key": "Environment",
+                        "Value": { "Ref": "Environment" }
+                    }
+                ]
+            }
+        },
+        "WebServerAzTwo": {
+            "Type": "AWS::EC2::Instance",
+            "Metadata": {
+                "AWS::CloudFormation::Init": {
+                    "config": {
+                        "sources": {
+							"C:\\Program Files\\WindowsPowerShell\\Modules": {
+                                "Ref": "PowerShellModulesBundleUrl"
+                            },
+							"c:\\cfn\\Zephyr\\Scripts": {
+							"Ref": "BootstrapperScriptBundleUrl"
+							}
+                        },
+                        "files": {
+                            "c:\\cfn\\cfn-hup.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[main]\n",
+                                            "stack=",
+                                            {
+                                                "Ref": "AWS::StackId"
+                                            },
+                                            "\n",
+                                            "region=",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n"
+                                        ]
+                                    ]
+                                }
+                            },
+                            "c:\\cfn\\hooks.d\\cfn-auto-reloader.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[cfn-auto-reloader-hook]\n",
+                                            "triggers=post.update\n",
+                                            "path=Resources.WebServerAzTwo.Metadata.AWS::CloudFormation::Init\n",
+                                            "action=cfn-init.exe -v -s ",
+                                            {
+                                                "Ref": "AWS::StackId"
+                                            },
+                                            " -r WebServerAzTwo",
+                                            " --region ",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n"
+                                        ]
+                                    ]
+                                }
+                            },
+                            "c:\\cfn\\hooks.d\\cfn-teardown.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[cfn-teardown-hook]\n",
+                                            "triggers=post.remove\n",
+                                            "path=Resources.WebServerAzTwo.Metadata.AWS::CloudFormation::Init\n",
+                                            "action=powershell.exe -Command C:\\cfn\\Zephyr\\Scripts\\Teardown.ps1\n"
+                                        ]
+                                    ]
+                                }
+                            }
+                        },
+                        "commands": {
+                            "00-set-execution-policy": {
+                                "command": "powershell.exe -Command Set-ExecutionPolicy Unrestricted -Force",
+                                "waitAfterCompletion": "0"
+                            },
+                            "01-configure-webserver": {
+                                "command": "powershell.exe -Command C:\\cfn\\Zephyr\\Scripts\\ConfigureWebserver.ps1",
+                                "waitAfterCompletion": "0"
+                            }
+                        },
+                        "services": {
+                            "windows": {
+                                "cfn-hup": {
+                                    "enabled": "true",
+                                    "ensureRunning": "true",
+                                    "files": [
+                                        "c:\\cfn\\cfn-hup.conf",
+                                        "c:\\cfn\\hooks.d\\cfn-auto-reloader.conf"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "AWS::CloudFormation::Authentication": {
+                    "S3AccessCreds": {
+                        "type": "S3",
+                        "roleName": { "Ref": "BootstrapperRole" },
+                        "buckets": [ { "Ref": "S3BucketName" } ]
+                    }
+                }
+            },
+            "Properties": {
+                "ImageId": { "Ref": "WebserverImageId" },
+                "InstanceType": { "Ref": "WebserverInstanceType" },
+                "SubnetId": { "Ref": "WebserverSubnetIdAzTwo" },
+                "SecurityGroupIds": [ { "Fn::GetAtt": [ "WebSecurityGroup", "GroupId" ] } ],
+                "IamInstanceProfile": { "Ref": "InstanceProfile" },
+                "KeyName": { "Ref": "KeyPairName" },
+                "BlockDeviceMappings": [
+                    {
+                        "DeviceName": "/dev/sda1",
+                        "Ebs": {
+                            "VolumeSize": "50",
+                            "VolumeType": "gp2"
+                        }
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "<script>\n",
+                                "wevtutil.exe set-log \"Microsoft-Windows-DSC/Analytic\" /e:true /q:true \n",
+                                "wevtutil.exe set-log \"Microsoft-Windows-DSC/Debug\" /e:true /q:true \n",
+                                "cfn-init.exe -v -s ",
+                                {
+                                    "Ref": "AWS::StackId"
+                                },
+                                " -r WebServerAzTwo",
+                                " --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "\n",
+
+                                "</script>"
+                            ]
+                        ]
+                    }
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "",
+                                [
+									{
+                                        "Ref": "ResourcePrefix"
+                                    },
+									"-",
+                                    {
+                                        "Ref": "Environment"
+                                    },
+                                    "-WebServerTwo"
+                                ]
+                            ]
+                        }
+                    },
+                    {
+                        "Key": "Version",
+                        "Value": { "Ref": "Version" }
+                    },
+                    {
+                        "Key": "Environment",
+                        "Value": { "Ref": "Environment" }
+                    }
+                ]
+            }
+        },
+        "LoadBalancerSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Inbound HTTP from all",
+                "VpcId": { "Ref": "VpcId" },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+        "LoadBalancer": {
+            "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+            "Properties": {
+                "Instances": [
+                    { "Ref": "WebServerAzOne" },
+                    { "Ref": "WebServerAzTwo" }
+                ],
+                "Listeners": [
+                    {
+                        "LoadBalancerPort": "80",
+                        "InstancePort": "80",
+                        "Protocol": "HTTP"
+                    }
+                ],
+                "Subnets": [
+                    { "Ref": "LoadBalancerSubnetIdAzOne" },
+                    { "Ref": "LoadBalancerSubnetIdAzTwo" }
+                ],
+                "SecurityGroups": [ { "Fn::GetAtt": [ "LoadBalancerSecurityGroup", "GroupId" ] } ],
+                "HealthCheck": {
+                    "Target": "HTTP:81/",
+                    "HealthyThreshold": "3",
+                    "UnhealthyThreshold": "10",
+                    "Interval": "150",
+                    "Timeout": "10"
+                }
+            }
+        }
+    },
+
+    "Outputs": {
+        "LoadBalancerUri": {
+            "Value": { "Fn::GetAtt": [ "LoadBalancer", "DNSName" ] }
+        }
+    }
+}
