@@ -2,7 +2,7 @@
 
 ## Cloud Formation templating
 
-In this exercise we will build a cloud formation template to provision the security group and EC2 instance pair that we manually created in Exercise 1
+In this exercise we will build a cloud formation template to provision the security group and EC2 instance pair that we manually created in [Exercise 1](https://github.com/andrewabest/AWS-Workshop/blob/master/Exercise1.md)
 
 ## Goals
 
@@ -16,7 +16,7 @@ In this exercise we will build a cloud formation template to provision the secur
 2. Spend a some time getting familiar with what it is doing
 * How does the template get from our local machine to AWS? 
 * How do we supply parameters that our CloudFormation template requires? 
-3. Grab Parameters.ps1 and copy it into .\Exercise2\Private. Update the ResourcePrefix parameter to your initials, and take note of the other parameters provided
+3. Open .\Exercise2\Parameters.ps1. Update the ResourcePrefix parameter to your initials, and take note of the other parameters provided
 4. Create an empty file named Webserver.template in .\Exercise2\Templates
 5. Build your template's [Skeleton Structure](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-anatomy.html)
 6. Define your [Security Group Template](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-security-group.html)
@@ -25,7 +25,7 @@ In this exercise we will build a cloud formation template to provision the secur
 8. Kick off .\Deploy.ps1 by F5-ing it in ISE, and open the CloudFormation section of the AWS console
 9. Monitor your stack's creation by opening the 'Events' tab for a running summary of progress
 10. If something fails, analyse the error. What went wrong? Double check your template, and the template documentation. Feel free to grab someone to rubber duck!
-11. If it is all green, jump into the EC2 section and try to remote into your instance
+11. If it is all green, jump into the EC2 console and try to remote into your instance
 12. Great success!
 
 Note: If you installed the [Visual Studio Tooling](http://blog.kloud.com.au/2015/05/18/create-aws-cloudformation-templates-with-visual-studio/) you can use an "AWS CloudFormation project" to work with your template, which will give you some intellisense out of the box.
