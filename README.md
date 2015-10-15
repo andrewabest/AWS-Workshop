@@ -5,6 +5,8 @@ Workshop content for the Readify QLD AWS Knowledge Share session
 
 You will need to have installed [The AWS.NET SDK](https://aws.amazon.com/sdk-for-net/). You could optionally install The [AWS VS Tooling](http://aws.amazon.com/visualstudio/) instead which includes the SDK, and also gives you intellisense for CloudFormation templates.
 
+The samples within assume you are using the [AWS SDK Credential Store](http://docs.aws.amazon.com/powershell/latest/userguide/specifying-your-aws-credentials.html). You will need to store an appropriate set of credentials under the "AWSWorkshop" profile to execute the samples. *ResetCredentials.bat* will help accomplish this.
+
 ## Itinerary
 
 * Working securely in AWS
