@@ -1,0 +1,14 @@
+﻿<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Demo.Infrastructure</id>
+    <version>$version$</version>
+    <title>Demo.Infrastructure</title>
+    <authors>Andrew Best</authors>
+    <owners>Andrew Best</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>CloudFormation template and DSC scripts for a basic public facing load balanced fault tolerant webserver rollout</description>
+    <copyright>Copyright 2015 Andrew Best</copyright>
+    <tags></tags>
+  </metadata>
+</package>
