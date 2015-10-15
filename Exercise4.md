@@ -23,17 +23,18 @@ In this exercise we will take a fleshed out web server CloudFormation template, 
 	* Set the powershell execution policy to unrestricted
 	* Invoke our ConfigureWebserver DSC configuration
 8. Duplicate 5-7 on WebServerAzTwo
-9. Open Deploy.ps1 locally in Powershell ISE.
-10. F5!!!
-11. Open the CloudFormation console in AWS and monitor your stack's creation
-12. If it fails, troubleshooting time! Pick your troubleshooting buddy and get it sorted
-13. If it succeeds, open up the EC2 console and remote into one of your instances
-14. Open c:\cfn\logs\cfn-init.log
-15. Can you see your DSC output inside it? Are there any errors, or does everything look good? 
+9. Open .\Exercise4\Parameters.ps1. Update the ResourcePrefix parameter to your initials, and take note of the other parameters provided
+10. Open Deploy.ps1 locally in Powershell ISE.
+11. F5!!!
+12. Open the CloudFormation console in AWS and monitor your stack's creation
+13. If it fails, troubleshooting time! Pick your troubleshooting buddy and get it sorted
+14. If it succeeds, open up the EC2 console and remote into one of your instances
+15. Open c:\cfn\logs\cfn-init.log
+16. Can you see your DSC output inside it? Are there any errors, or does everything look good? 
 
 ### Gotcha
 
 cfn-init will consider its job done when at the point when all of its commands have succesfully completed - this is going to be at the first reboot of your DSC. This means that if subsequent parts of your DSC fail, the cloud formation init logs are not going to tell you - so you need to monitor your DSC logs to ensure it is happily configured.
 
-16. Revisit your recently acquired DSC log analyzing skills. Has everything gone swimmingly?
-17. Profit!
+17. Revisit your recently acquired DSC log analyzing skills. Has everything gone swimmingly?
+18. Profit!
