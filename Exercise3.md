@@ -14,7 +14,7 @@ In this exercise we will build out a sample DSC template and apply it to our Clo
 
 ## Instructions
 
-1. Remote into your instance that you created with CloudFormation in exercise 2.
+1. Remote into your instance that you created with CloudFormation in [Exercise 2](https://github.com/andrewabest/AWS-Workshop/blob/master/Exercise2.md).
 2. Copy the contents of .\Exercise3 onto the instance
 3. Jump into PowerShell ISE on your instance and allow us to utilize our unsigned DSC resources by executing the following
 
