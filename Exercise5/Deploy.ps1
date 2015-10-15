@@ -47,7 +47,7 @@ function EnsureDirectoryExists($directoryPath)
 	$scriptsPath = "$scriptPath\Scripts"
 	EnsureDirectoryExists($scriptsPath)
 
-    if ($Parameters -eq $null)
+    if ($OctopusParameters -eq $null)
     {
         Write-Output "Doesn't look like we have any Octopus variables. Using development defaults."
 
