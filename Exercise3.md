@@ -2,7 +2,7 @@
 
 ## PowerShell DSC authoring
 
-In this exercise we will build out a sample DSC template and apply it to our CloudFormation-created web servers that we created in Exercise 2.
+In this exercise we will build out a sample DSC template and apply it to our CloudFormation-created web servers that we created in [Exercise 2](https://github.com/andrewabest/AWS-Workshop/blob/master/Exercise2.md).
 
 ## Goals
 
