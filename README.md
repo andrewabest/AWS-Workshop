@@ -19,3 +19,7 @@ You will need to have installed [The AWS.NET SDK](https://aws.amazon.com/sdk-for
 * [Exercise Four - CloudFormation + DSC](https://github.com/andrewabest/AWS-Workshop/blob/master/Exercise4.md)
 * Exercise Five - CloudFormation + DSC + Octopus (Form like Voltron)
 * Discussion time - Automating infrastructure
+
+### Disclaimer
+
+What is presented here is 101 level infrastructure automation, and is not intended as a production solution. Most production rollouts in AWS will involve a significantly more complex setup to enforce appropriate security and scalability - for a reference architecture, see [Amazon's examples](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Scenario3.html).
