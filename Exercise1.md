@@ -24,5 +24,5 @@ In this exercise we will be provisioning an EC2 instance by hand to build some f
  10. GO GO GO!
  11. Once launched, remote onto your instance via it's public IP address
  12. Give that this is a base windows image, we will need to add the *Web Server* role to it in Server Management, and ensure under that that we have selected *Application Development > ASP.NET 4.5*
- 13. Finally, connect to Octopus (http://52.27.158.189), install a tentacle onto your machine, and add your machine to the CI environment and trigger a deployment
+ 13. Finally, connect to Octopus, install a tentacle onto your machine, and add your machine to the CI environment and trigger a deployment
  14. Hit http://localhost - great success!
