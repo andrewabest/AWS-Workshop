@@ -20,7 +20,7 @@ In this exercise we will be provisioning an EC2 instance by hand to build some f
  6. Provision a 50 gigabyte *General Purpose* SSD to be used
  7. Tag the instance with {yourinitials}-WebServer
  8. Create a new security group named {yourinitials}-WebServer-SecurityGroup
- 9. Given we are going to be using the instance to host a web site, need to remote to it to configure a tentacle, and Octopus needs to talk to it, assign appropriate rules
+ 9. Given we are going to be using the instance to host a web site, need to remote to it to configure a tentacle, and Octopus needs to talk to it, assign inbound access rules for ports 80, 3389 and 10933
  10. GO GO GO! (Click Launch)
  11. You will be prompted for a key pair that will be used to generate the instance's administrator password. Select the AwsDayKeyPair
  12. Once launched, remote onto your instance via it's public IP address - to retrieve the password for your instance, select it in the console and click 'Connect', locate the .pem file for the AwsDayKeyPair and click 'Decrypt Password'
