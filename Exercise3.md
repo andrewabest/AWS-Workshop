@@ -34,3 +34,6 @@ In this exercise we will build out a sample DSC template and apply it to our Clo
 13. If there were errors, troubleshoot what they were. Pair up, rubber duck, whatever works! Once you think you have fixed the errors in your configuration again, F5 it again!
 14. Rinse and repeat until you have succesfully configured your server
 
+### Gotchas
+
+If you want to run the configuration multiple times, you will need to remove the previously generated MOF before regenerating a new one, or you will get a reasonably undecipherable error
