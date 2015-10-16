@@ -17,8 +17,8 @@ In this exercise we will take a fleshed out web server CloudFormation template, 
 4. Locate the template for the WebServerAzOne instance
 5. Follow the [Bootstrapping Windows Instances](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-windows-stacks-bootstrapping.html) example and fill out the UserData section of the template to kickstart cfn-init
 6. Complete the **sources** section of the [CloudFormation::Init template](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-init.html) within WebServerAzOne to pull down
-	* Our powershell modules to C:\Program Files\WindowsPowerShell\Modules
-	* Our scripts to c:\cfn\Zephyr\Scripts
+	* Our powershell modules from the PowerShellModulesBundleUrl template parameter to C:\Program Files\WindowsPowerShell\Modules
+	* Our scripts from the BootstrapperScriptBundleUrl template parameter to c:\cfn\Zephyr\Scripts
 7. Complete the **commands** section of the [CloudFormation::Init template](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-init.html) within WebServerAzOne to
 	* Set the powershell execution policy to unrestricted
 	* Invoke our ConfigureWebserver DSC configuration
