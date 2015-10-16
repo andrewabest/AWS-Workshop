@@ -60,6 +60,7 @@ function EnsureDirectoryExists($directoryPath)
 
 	# Lower case variables sensitive to casing
 	$OctopusParameters['CloudFormationStackName'] = $OctopusParameters['CloudFormationStackName'].ToLowerInvariant()
+    $OctopusParameters['S3BucketName'] = $OctopusParameters['S3BucketName'].ToLowerInvariant()
 
     Write-Output $OctopusParameters
     Write-Output ""

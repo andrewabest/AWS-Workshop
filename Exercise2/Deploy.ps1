@@ -30,6 +30,7 @@ function GenerateConfigFileS3Key($environment, $release, $filename)
 
 	# Lower case variables sensitive to casing
 	$Parameters['CloudFormationStackName'] = $Parameters['CloudFormationStackName'].ToLowerInvariant()
+    $Parameters['S3BucketName'] = $Parameters['S3BucketName'].ToLowerInvariant()
 
     Write-Output $Parameters
     Write-Output ""
