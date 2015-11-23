@@ -25,5 +25,5 @@ In this exercise we will be provisioning an EC2 instance by hand to build some f
  11. You will be prompted for a key pair that will be used to generate the instance's administrator password. Select the AwsDayKeyPair
  12. Once launched, remote onto your instance via it's public IP address - to retrieve the password for your instance, select it in the console and click 'Connect', locate the .pem file for the AwsDayKeyPair and click 'Decrypt Password'
  13. Give that this is a base windows image, we will need to add the *Web Server* role to it in Server Management, and ensure under that that we have selected *Application Development > ASP.NET 4.5*
- 14. Finally, connect to Octopus (address and credentials are be provided), install a tentacle onto your machine, and add your machine to the CI environment and trigger a deployment
+ 14. Finally, connect to Octopus (address and credentials are be provided), install a tentacle onto your machine, add your machine to the CI environment and trigger a deployment
  15. Hit http://localhost - great success!
