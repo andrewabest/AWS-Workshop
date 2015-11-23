@@ -1,5 +1,5 @@
 # AWS-Workshop
-Workshop content for the Readify QLD AWS Knowledge Share session
+Workshop content for automated delivery in AWS for .NET
 
 ## Prerequisites
 
