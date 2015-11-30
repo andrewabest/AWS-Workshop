@@ -12,7 +12,7 @@ In this exercise we will build a cloud formation template to provision the secur
 
 ## Prior to starting
 
-To complete this exercise you'll need to add an appropriate set of credentials to your [SDK Credential Store](http://docs.aws.amazon.com/powershell/latest/userguide/specifying-your-aws-credentials.html) - run ResetParameters.bat from the repository root with appropriate parameters to do this
+To complete this exercise you'll need to add an appropriate set of credentials to your [SDK Credential Store](http://docs.aws.amazon.com/powershell/latest/userguide/specifying-your-aws-credentials.html) - run ResetCredentials.bat from the repository root with appropriate parameters to do this
 
 ## Instructions
 
