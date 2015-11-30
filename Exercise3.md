@@ -4,6 +4,8 @@
 
 In this exercise we will build out a sample DSC template and apply it to our CloudFormation-created web servers that we created in [Exercise 2](https://github.com/andrewabest/AWS-Workshop/blob/master/Exercise2.md).
 
+We are going to configure a website to act as a basic load balancer endpoint that our server's IIS can serve up when requested over port 81 - a static index.html file will suffice. 
+
 ## Goals
 
 * Use DSC resources to add a load balancer endpoint and firewall exceptions to the supplied DSC template
@@ -25,9 +27,9 @@ In this exercise we will build out a sample DSC template and apply it to our Clo
 	> C:\Program Files\WindowsPowerShell\Modules
 5. Open .\Exercise3\DSC_Diagnostics.md and read it. Enable low level logging on your instance, and have a play with the Get and Trace cmdlets mentioned
 6. Open .\Exercise3\ConfigureWebserver.ps1 - this is our DSC configuration. Take a look at its structure. Look at what it is already doing
-7. Complete the [File](https://technet.microsoft.com/en-au/library/dn282129.aspx) resource TODO
-8. Complete the [xWebsite](https://gallery.technet.microsoft.com/scriptcenter/xWebAdministration-Module-3c8bb6be) resource TODO
-9. Complete the [xFirewall](https://gallery.technet.microsoft.com/scriptcenter/xNetworking-Module-818b3583) resource TODO
+7. Complete the [File](https://msdn.microsoft.com/en-us/PowerShell/DSC/fileResource) resource TODO
+8. Complete the [xWebsite](https://github.com/PowerShell/xWebAdministration#xwebsite) resource TODO
+9. Complete the [xFirewall](https://github.com/PowerShell/xNetworking#xfirewall) resource TODO
 10. F5 your configuration. The machine will need to reboot a couple of times - you can see where by looking for the **xPendingReboot** resource usage
 11. Monitor the EC2 console in AWS for your machine to come back online - once it is, remote back into it
 12. Open the DSC_Diagnostics.md guide again and use the instructions to see what operations were executed, if they were successful or not, and what diagnostic information you are provided with
