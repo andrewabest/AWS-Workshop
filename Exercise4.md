@@ -14,7 +14,7 @@ In this exercise we will take a fleshed out web server CloudFormation template, 
 1. Read through this example of [Bootstrapping Windows Instances](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-windows-stacks-bootstrapping.html)
 2. Read the documentation on the [CloudFormation::Init template](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-init.html)
 3. Open .\Exercise4\Templates\Webserver.template
-4. Locate the Webserver template that contains the WebServerAzOne resource definition
+4. Locate the the WebServerAzOne resource definition within the webserver template
 5. Follow the [Bootstrapping Windows Instances](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-windows-stacks-bootstrapping.html) example and fill out the UserData section of the template to kickstart cfn-init
 6. Complete the **sources** section of the [CloudFormation::Init template](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-init.html) within WebServerAzOne to pull down
 	* Our powershell modules from the PowerShellModulesBundleUrl template parameter to C:\Program Files\WindowsPowerShell\Modules
