@@ -71,8 +71,6 @@
             "Properties": {
                 "ImageId": { "Ref": "WebserverImageId" },
                 "InstanceType": { "Ref": "WebserverInstanceType" },
-                "SubnetId": { "Ref": "WebserverSubnetId" },
-                "SecurityGroupIds": [ { "Fn::GetAtt": [ "WebSecurityGroup", "GroupId" ] } ],
                 "KeyName": { "Ref": "KeyPairName" },
                 "BlockDeviceMappings": [
                     {
@@ -83,6 +81,12 @@
                         }
                     }
                 ],
+                "NetworkInterfaces": [ {
+                  "AssociatePublicIpAddress": "true",
+                  "DeviceIndex": "0",
+                  "GroupSet": [ { "Fn::GetAtt": [ "WebSecurityGroup", "GroupId" ] } ],
+                  "SubnetId": { "Ref" : "WebserverSubnetId" }
+                } ],
                 "Tags": [
                     {
                         "Key": "Name",
@@ -90,10 +94,10 @@
                             "Fn::Join": [
                                 "",
                                 [
-									{
+                                    {
                                         "Ref": "ResourcePrefix"
                                     },
-									"-",
+                                    "-",
                                     {
                                         "Ref": "Environment"
                                     },
