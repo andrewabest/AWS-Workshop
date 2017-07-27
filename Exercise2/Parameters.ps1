@@ -1,18 +1,18 @@
 $Parameters = @{}
 
 # Octopus parameters
-$Parameters['ResourcePrefix'] = "ab";
-$Parameters['Environment'] = "CI";
-$Parameters['Version'] = "1.0.0";
+$Parameters['ResourcePrefix'] = "aab";
+$Parameters['Environment'] = "Production";
+$Parameters['Version'] = "1.0.0-ryan0001";
 
 # CloudFormation parameters
-$Parameters['AWSRegion'] = "us-west-2";
+$Parameters['AWSRegion'] = "ap-southeast-2";
 $Parameters['CloudFormationStackName'] = "{0}-simple-sandbox-{1}" -f @($Parameters['ResourcePrefix'], $Parameters['Environment']);
 $Parameters['S3BucketName'] = "{0}-simple-sandbox-infrastructure" -f $Parameters['ResourcePrefix'];
-$Parameters['VpcId'] = "vpc-a8450bcd";
+$Parameters['VpcId'] = "vpc-7ecaee1b";
 
 # AWS parameters
 $Parameters['KeyPairName'] = "AwsDayKeyPair";
-$Parameters['WebserverImageId'] = "ami-dfccd1ef"; #WINDOWS_2012R2_BASE
-$Parameters['WebserverInstanceType'] = "t2.small";
-$Parameters['WebserverSubnetId'] = "subnet-3a8bf94d"; # Public A
+$Parameters['WebserverImageId'] = "ami-bf8895dc"; #WINDOWS_2016_BASE
+$Parameters['WebserverInstanceType'] = "t2.medium";
+$Parameters['WebserverSubnetId'] = "subnet-99477cee"; # DMZ B
