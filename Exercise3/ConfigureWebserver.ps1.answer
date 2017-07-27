@@ -10,7 +10,7 @@
 	{
 		LocalConfigurationManager
 		{
-			RebootNodeIfNeeded = 'True'
+			RebootNodeIfNeeded = $True
 		}
 
         WinServerOptions ServerOptions

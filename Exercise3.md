@@ -25,6 +25,10 @@ We are going to configure a website to act as a basic load balancer endpoint tha
 4. Open .\Exercise3\PowerShellModules, and copy all of the folders therein over to 
 
 	> C:\Program Files\WindowsPowerShell\Modules
+
+	> NOTE: since Powershell 5, we can install these modules like so:
+	> install-module xdscdiagnostics -Repository 'PSGallery'
+	
 5. Open .\Exercise3\DSC_Diagnostics.md and read it. Enable low level logging on your instance, and have a play with the Get and Trace cmdlets mentioned
 6. Open .\Exercise3\ConfigureWebserver.ps1 - this is our DSC configuration. Take a look at its structure. Look at what it is already doing
 7. Complete the [File](https://msdn.microsoft.com/en-us/PowerShell/DSC/fileResource) resource TODO
