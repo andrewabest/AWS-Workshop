@@ -2,7 +2,7 @@
 
 ## Deployment Magic
 
-In the final exercise, we are going to use some DSC + Octopus magic to [Deploy to Dead Air](http://tech.domain.com.au/2015/04/robot-army-v2-5/). 
+In the final exercise, we are going to use some DSC + Octopus magic to [Automatically Deploy](https://octopus.com/docs/guides/elastic-and-transient-environments/immutable-infrastructure) to our transient infrastructure. 
 
 ## Goals
 
@@ -20,7 +20,7 @@ In the final exercise, we are going to use some DSC + Octopus magic to [Deploy t
 4. The astute observer would notice that this file will be scooped up into our scripts zip that we then download onto our instances during cfn-init
 5. Navigate to .\Exercise5\PowerShellModules\cOctopus\DSCResources\cTentacleAgent\cTentacleAgent.psm1 and open it up in PowerShell ISE
 6. Follow through **Set-TargetResource** and see how it does its thing
-7. Follow through to **Request-CurrentPackageVersions** and see how it behaves. See if you can guess what behaviour this function elicits
+7. Go to Octopus, open the *CloudFormawesome* project, and navigate to its _Triggers_. Take a look at the trigger that will deploy our software when our transient infrastructure enters our environment.
 8. Open up .\Exercise5\Scripts\ConfigureWebserver.ps1
 9. At the top of the file, determine the execution location using
 
