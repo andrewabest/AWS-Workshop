@@ -1,94 +1,172 @@
+$defaultTentacleDownloadUrl = "http://octopusdeploy.com/downloads/latest/OctopusTentacle"
+$defaultTentacleDownloadUrl64 = "http://octopusdeploy.com/downloads/latest/OctopusTentacle64"
+
 function Get-TargetResource
 {
     [OutputType([Hashtable])]
     param (
         [ValidateSet("Present", "Absent")]
         [string]$Ensure = "Present",
-
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$Name,
-
         [ValidateSet("Started", "Stopped")]
         [string]$State = "Started",
-        
+        [ValidateSet("Listen", "Poll")]
+        [string]$CommunicationMode = "Listen",
         [string]$ApiKey,
+        [string]$DisplayName = "$($env:COMPUTERNAME)_$Name",
         [string]$OctopusServerUrl,
-        [string[]]$Environments,
-        [string[]]$Roles,
+        [string[]]$Environments = "",
+        [string[]]$Roles = "",
+        [string]$Policy,
+        [string[]]$Tenants = "",
+        [string[]]$TenantTags = "",
         [string]$DefaultApplicationDirectory,
-        [int]$ListenPort
+        [int]$ListenPort=10933,
+        [int]$ServerPort=10943,
+        [string]$tentacleDownloadUrl = $defaultTentacleDownloadUrl,
+        [string]$tentacleDownloadUrl64 = $defaultTentacleDownloadUrl64,
+        [ValidateSet("PublicIp", "FQDN", "ComputerName", "Custom")]
+        [string]$PublicHostNameConfiguration = "PublicIp",
+        [string]$CustomPublicHostName,
+        [string]$TentacleHomeDirectory = "$($env:SystemDrive)\Octopus",
+        [bool]$RegisterWithServer = $true,
+        [string]$OctopusServerThumbprint
     )
-
     Write-Verbose "Checking if Tentacle is installed"
-    $installLocation = (get-itemproperty -path "HKLM:\Software\Octopus\Tentacle" -ErrorAction SilentlyContinue).InstallLocation
-    $present = ($installLocation -ne $null)
+    $installLocation = (Get-ItemProperty -path "HKLM:\Software\Octopus\Tentacle" -ErrorAction SilentlyContinue).InstallLocation
+    $present = ($null -ne $installLocation)
     Write-Verbose "Tentacle present: $present"
-    
+
     $currentEnsure = if ($present) { "Present" } else { "Absent" }
 
     $serviceName = (Get-TentacleServiceName $Name)
     Write-Verbose "Checking for Windows Service: $serviceName"
     $serviceInstance = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
     $currentState = "Stopped"
-    if ($serviceInstance -ne $null) 
+    if ($null -ne $serviceInstance)
     {
         Write-Verbose "Windows service: $($serviceInstance.Status)"
-        if ($serviceInstance.Status -eq "Running") 
+        if ($serviceInstance.Status -eq "Running")
         {
             $currentState = "Started"
         }
-        
-        if ($currentEnsure -eq "Absent") 
+
+        if ($currentEnsure -eq "Absent")
         {
             Write-Verbose "Since the Windows Service is still installed, the service is present"
             $currentEnsure = "Present"
         }
-    } 
-    else 
+    }
+    else
     {
         Write-Verbose "Windows service: Not installed"
         $currentEnsure = "Absent"
     }
 
+    $originalDownloadUrl = $null
+    if (Test-Path "$($env:SystemDrive)\Octopus\Octopus.DSC.installstate") {
+        $originalDownloadUrl = (Get-Content -Raw -Path "$($env:SystemDrive)\Octopus\Octopus.DSC.installstate" | ConvertFrom-Json).TentacleDownloadUrl
+    }
+
     return @{
-        Name = $Name; 
+        Name = $Name;
         Ensure = $currentEnsure;
         State = $currentState;
+        TentacleDownloadUrl = $originalDownloadUrl;
     };
 }
 
-function Set-TargetResource 
-{
-    param (       
+# test a variable has a value (whether its an array or string)
+function Test-Value($value) {
+    if ($value -eq "") { return $false }
+    if ($value.length -eq 0) { return $false }
+    if ($value.length -eq 1 -and $value[0].length -eq 0) { return $false }
+    return $true
+}
+
+function Confirm-RegistrationParameters {
+    param (
+        [bool]$RegisterWithServer,
+        [string[]]$Environments,
+        [string[]]$Roles,
+        [string]$Policy,
+        [string[]]$Tenants,
+        [string[]]$TenantTags
+    )
+    if ($RegisterWithServer) {
+        return
+    }
+
+    if ((Test-Value($Roles)) -or (Test-Value($Environments)) -or (Test-Value($Tenants)) -or (Test-Value($TenantTags)) -or (Test-Value($Policy))) {
+        throw "Invalid configuration requested. " + `
+            "You have asked for the Tentacle not to be registered with the server, but still provided a server specific configuration argument (Roles, Environments, Tenants, TenantTags or Policy). " + `
+            "Please remove the configuration argument or set 'RegisterWithServer = `$True'."
+    }
+}
+
+
+function Confirm-RequestedState() {
+    param (
         [ValidateSet("Present", "Absent")]
         [string]$Ensure = "Present",
+        [ValidateSet("Started", "Stopped")]
+        [string]$State = "Started"
+    )
+    if ($Ensure -eq "Absent" -and $State -eq "Started")
+    {
+        throw "Invalid configuration requested. " + `
+              "You have asked for the service to not exist, but also be running at the same time. " +`
+              "You probably want 'State = `"Stopped`"'."
+    }
+}
 
+function Set-TargetResource
+{
+    param (
+        [ValidateSet("Present", "Absent")]
+        [string]$Ensure = "Present",
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$Name,
-
         [ValidateSet("Started", "Stopped")]
         [string]$State = "Started",
-        
+        [ValidateSet("Listen", "Poll")]
+        [string]$CommunicationMode = "Listen",
         [string]$ApiKey,
         [string]$OctopusServerUrl,
-        [string[]]$Environments,
-        [string[]]$Roles,
+        [string]$DisplayName = "$($env:COMPUTERNAME)_$Name",
+        [string[]]$Environments = "",
+        [string[]]$Roles = "",
+        [string]$Policy,
+        [string[]]$Tenants = "",
+        [string[]]$TenantTags = "",
         [string]$DefaultApplicationDirectory = "$($env:SystemDrive)\Applications",
-        [int]$ListenPort = 10933
+        [int]$ListenPort = 10933,
+        [int]$ServerPort = 10943,
+        [string]$tentacleDownloadUrl = $defaultTentacleDownloadUrl,
+        [string]$tentacleDownloadUrl64 = $defaultTentacleDownloadUrl64,
+        [ValidateSet("PublicIp", "FQDN", "ComputerName", "Custom")]
+        [string]$PublicHostNameConfiguration = "PublicIp",
+        [string]$CustomPublicHostName,
+        [string]$TentacleHomeDirectory = "$($env:SystemDrive)\Octopus",
+        [bool]$RegisterWithServer = $true,
+        [string]$OctopusServerThumbprint
     )
-
-    if ($Ensure -eq "Absent" -and $State -eq "Started") 
-    {
-        throw "Invalid configuration: service cannot be both 'Absent' and 'Started'"
-    }
+    Confirm-RequestedState $Ensure $State
+    Confirm-RegistrationParameters $RegisterWithServer `
+        -Environments $Environments `
+        -Roles $Roles `
+        -Policy $Policy `
+        -Tenants $Tenants `
+        -TenantTags $TenantTags
 
     $currentResource = (Get-TargetResource -Name $Name)
 
     Write-Verbose "Configuring Tentacle..."
 
-    if ($State -eq "Stopped" -and $currentResource["State"] -eq "Started") 
+    if ($State -eq "Stopped" -and $currentResource["State"] -eq "Started")
     {
         $serviceName = (Get-TentacleServiceName $Name)
         Write-Verbose "Stopping $serviceName"
@@ -97,38 +175,85 @@ function Set-TargetResource
 
     if ($Ensure -eq "Absent" -and $currentResource["Ensure"] -eq "Present")
     {
-        Remove-TentacleRegistration -name $Name -apiKey $ApiKey -octopusServerUrl $OctopusServerUrl
-        
+        if ($RegisterWithServer) {
+            Remove-TentacleRegistration -name $Name -apiKey $ApiKey -octopusServerUrl $OctopusServerUrl
+        }
+
         $serviceName = (Get-TentacleServiceName $Name)
         Write-Verbose "Deleting service $serviceName..."
         Invoke-AndAssert { & sc.exe delete $serviceName }
-        
-        # Uninstall msi
-        Write-Verbose "Uninstalling Tentacle..."
-        $tentaclePath = "$($env:SystemDrive)\Octopus\Tentacle.msi"
-        $msiLog = "$($env:SystemDrive)\Octopus\Tentacle.msi.uninstall.log"
-        if (test-path $tentaclePath)
+
+        $otherServices = @(Get-CimInstance win32_service | Where-Object {$_.PathName -like "`"$($env:ProgramFiles)\Octopus Deploy\Tentacle\Tentacle.exe*"})
+
+        if ($otherServices.length -eq 0)
         {
-            $msiExitCode = (Start-Process -FilePath "msiexec.exe" -ArgumentList "/x $tentaclePath /quiet /l*v $msiLog" -Wait -Passthru).ExitCode
-            Write-Verbose "Tentacle MSI installer returned exit code $msiExitCode"
-            if ($msiExitCode -ne 0) 
+            # Uninstall msi
+            Write-Verbose "Uninstalling Tentacle..."
+            if (-not (Test-Path "$TentacleHomeDirectory\logs")) { New-Item -type Directory "$TentacleHomeDirectory\logs" }
+            $tentaclePath = "$TentacleHomeDirectory\Tentacle.msi"
+            $msiLog = "$TentacleHomeDirectory\logs\Tentacle.msi.uninstall.log"
+            if (test-path $tentaclePath)
             {
-                throw "Removal of Tentacle failed, MSIEXEC exited with code: $msiExitCode. View the log at $msiLog"
+                $msiExitCode = (Start-Process -FilePath "msiexec.exe" -ArgumentList "/x $tentaclePath /quiet /l*v $msiLog" -Wait -Passthru).ExitCode
+                Write-Verbose "Tentacle MSI installer returned exit code $msiExitCode"
+                if ($msiExitCode -ne 0)
+                {
+                    throw "Removal of Tentacle failed, MSIEXEC exited with code: $msiExitCode. View the log at $msiLog"
+                }
+            }
+            else
+            {
+                throw "Tentacle cannot be removed, because the MSI could not be found."
             }
         }
-        else 
+        else
         {
-            throw "Tentacle cannot be removed, because the MSI could not be found."
+            Write-Verbose "Skipping uninstall, as other tentacles still exist:"
+            foreach($otherService in $otherServices)
+            {
+                Write-Verbose " - $($otherService.Name)"
+            }
         }
-    } 
-    elseif ($Ensure -eq "Present" -and $currentResource["Ensure"] -eq "Absent") 
+    }
+    elseif ($Ensure -eq "Present" -and $currentResource["Ensure"] -eq "Absent")
     {
         Write-Verbose "Installing Tentacle..."
-        New-Tentacle -name $Name -apiKey $ApiKey -octopusServerUrl $OctopusServerUrl -port $ListenPort -environments $Environments -roles $Roles -DefaultApplicationDirectory $DefaultApplicationDirectory
+        New-Tentacle -name $Name `
+                     -apiKey $ApiKey `
+                     -octopusServerUrl $OctopusServerUrl `
+                     -port $ListenPort `
+                     -displayName $DisplayName `
+                     -environments $Environments `
+                     -roles $Roles `
+                     -policy $Policy `
+                     -tenants $Tenants `
+                     -tenantTags $TenantTags `
+                     -defaultApplicationDirectory $DefaultApplicationDirectory `
+                     -tentacleDownloadUrl $tentacleDownloadUrl `
+                     -tentacleDownloadUrl64 $tentacleDownloadUrl64 `
+                     -communicationMode $CommunicationMode `
+                     -serverPort $ServerPort `
+                     -publicHostNameConfiguration $PublicHostNameConfiguration `
+                     -customPublicHostName $CustomPublicHostName `
+                     -tentacleHomeDirectory $TentacleHomeDirectory `
+                     -registerWithServer $RegisterWithServer `
+                     -octopusServerThumbprint $OctopusServerThumbprint
+
         Write-Verbose "Tentacle installed!"
     }
+    elseif ($Ensure -eq "Present" -and $currentResource["TentacleDownloadUrl"] -ne (Get-TentacleDownloadUrl $tentacleDownloadUrl $tentacleDownloadUrl64))
+    {
+        Write-Verbose "Upgrading Tentacle..."
+        $serviceName = (Get-TentacleServiceName $Name)
+        Stop-Service -Name $serviceName
+        Install-Tentacle $tentacleDownloadUrl $tentacleDownloadUrl64 $TentacleHomeDirectory
+        if ($State -eq "Started") {
+            Start-Service $serviceName
+        }
+        Write-Verbose "Tentacle upgraded!"
+    }
 
-    if ($State -eq "Started" -and $currentResource["State"] -eq "Stopped") 
+    if ($State -eq "Started" -and $currentResource["State"] -eq "Stopped")
     {
         $serviceName = (Get-TentacleServiceName $Name)
         Write-Verbose "Starting $serviceName"
@@ -138,108 +263,158 @@ function Set-TargetResource
     Write-Verbose "Finished"
 }
 
-function Test-TargetResource 
+function Test-TargetResource
 {
-    param (       
+    param (
         [ValidateSet("Present", "Absent")]
         [string]$Ensure = "Present",
-
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$Name,
-
         [ValidateSet("Started", "Stopped")]
         [string]$State = "Started",
-        
+        [ValidateSet("Listen", "Poll")]
+        [string]$CommunicationMode = "Listen",
         [string]$ApiKey,
         [string]$OctopusServerUrl,
-        [string[]]$Environments,
-        [string[]]$Roles,
+        [string]$DisplayName = "$($env:COMPUTERNAME)_$Name",
+        [string[]]$Environments = "",
+        [string[]]$Roles = "",
+        [string]$Policy,
+        [string[]]$Tenants = "",
+        [string[]]$TenantTags = "",
         [string]$DefaultApplicationDirectory,
-        [int]$ListenPort
+        [int]$ListenPort=10933,
+        [int]$ServerPort=10943,
+        [string]$tentacleDownloadUrl = $defaultTentacleDownloadUrl,
+        [string]$tentacleDownloadUrl64 = $defaultTentacleDownloadUrl64,
+        [ValidateSet("PublicIp", "FQDN", "ComputerName", "Custom")]
+        [string]$PublicHostNameConfiguration = "PublicIp",
+        [string]$CustomPublicHostName,
+        [string]$TentacleHomeDirectory = "$($env:SystemDrive)\Octopus",
+        [bool]$RegisterWithServer = $true,
+        [string]$OctopusServerThumbprint
     )
- 
+
     $currentResource = (Get-TargetResource -Name $Name)
 
     $ensureMatch = $currentResource["Ensure"] -eq $Ensure
     Write-Verbose "Ensure: $($currentResource["Ensure"]) vs. $Ensure = $ensureMatch"
-    if (!$ensureMatch) 
+    if (!$ensureMatch)
     {
         return $false
     }
-    
+
     $stateMatch = $currentResource["State"] -eq $State
     Write-Verbose "State: $($currentResource["State"]) vs. $State = $stateMatch"
-    if (!$stateMatch) 
+    if (!$stateMatch)
     {
         return $false
+    }
+
+    if ($null -ne $currentResource["TentacleDownloadUrl"]) {
+        $requestedDownloadUrl = Get-TentacleDownloadUrl $tentacleDownloadUrl $tentacleDownloadUrl64
+        $downloadUrlsMatch = $requestedDownloadUrl -eq $currentResource["TentacleDownloadUrl"]
+        Write-Verbose "Download Url: $($currentResource["TentacleDownloadUrl"]) vs. $requestedDownloadUrl = $downloadUrlsMatch"
+        if (!$downloadUrlsMatch) {
+            return $false
+        }
     }
 
     return $true
 }
 
-function Get-TentacleServiceName 
+function Get-TentacleServiceName
 {
     param ( [string]$instanceName )
 
-    if ($instanceName -eq "Tentacle") 
+    if ($instanceName -eq "Tentacle")
     {
         return "OctopusDeploy Tentacle"
-    } 
-    else 
+    }
+    else
     {
         return "OctopusDeploy Tentacle: $instanceName"
     }
 }
 
-function Request-File 
+function Request-File
 {
     param (
         [string]$url,
         [string]$saveAs
     )
- 
+
     Write-Verbose "Downloading $url to $saveAs"
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12,[System.Net.SecurityProtocolType]::Tls11,[System.Net.SecurityProtocolType]::Tls
     $downloader = new-object System.Net.WebClient
     $downloader.DownloadFile($url, $saveAs)
 }
 
 function Invoke-AndAssert {
-    param ($block) 
-  
+    param ($block)
     & $block | Write-Verbose
-    if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne $null) 
+    if ($LASTEXITCODE -ne 0 -and $null -ne $LASTEXITCODE)
     {
         throw "Command returned exit code $LASTEXITCODE"
     }
 }
 
 # After the Tentacle is registered with Octopus, Tentacle listens on a TCP port, and Octopus connects to it. The Octopus server
-# needs to know the public IP address to use to connect to this Tentacle instance. Is there a way in Windows Azure in which we can 
+# needs to know the public IP address to use to connect to this Tentacle instance. Is there a way in Windows Azure in which we can
 # know the public IP/host name of the current machine?
-
 function Get-MyPublicIPAddress
 {
-    Write-Verbose "Getting public IP address"
-    $downloader = new-object System.Net.WebClient
-    $ip = ""
-	$attempts = 0
+    Write-Verbose "Getting ***PRIVATE*** IP address"
 
-	while ([string]::IsNullOrWhiteSpace($ip) -and $attempts -lt 5)
-	{
-		$ip = $downloader.DownloadString("https://api.ipify.org/")
-
-        if ([string]::IsNullOrWhiteSpace($ip))
-        {
-            $attempts++
-		    Start-Sleep -s 10
-        }
-	}
-
+    try
+    {
+        $ip = Invoke-RestMethod -Uri http://169.254.169.254/latest/meta-data/local-ipv4
+    }
+    catch
+    {
+        Write-Verbose $_
+    }
     return $ip
 }
-  
-function New-Tentacle 
+
+function Install-Tentacle
+{
+    param (
+        [string]$tentacleDownloadUrl,
+        [string]$tentacleDownloadUrl64,
+        [string]$tentacleHomeDirectory
+    )
+    Write-Verbose "Beginning Tentacle installation"
+
+    $actualTentacleDownloadUrl = Get-TentacleDownloadUrl $tentacleDownloadUrl $tentacleDownloadUrl64
+
+    mkdir "$tentacleHomeDirectory" -ErrorAction SilentlyContinue
+
+    $tentaclePath = "$tentacleHomeDirectory\Tentacle.msi"
+    if ((Test-Path $tentaclePath) -eq $true)
+    {
+        Remove-Item $tentaclePath -force
+    }
+    Write-Verbose "Downloading Octopus Tentacle MSI from $actualTentacleDownloadUrl to $tentaclePath"
+    Request-File $actualTentacleDownloadUrl $tentaclePath
+
+    Write-Verbose "Installing MSI..."
+    if (-not (Test-Path "$TentacleHomeDirectory\logs")) { New-Item -type Directory "$TentacleHomeDirectory\logs" }
+    $msiLog = "$TentacleHomeDirectory\logs\Tentacle.msi.log"
+    $msiExitCode = (Start-Process -FilePath "msiexec.exe" -ArgumentList "/i $tentaclePath /quiet /l*v $msiLog" -Wait -Passthru).ExitCode
+    Write-Verbose "Tentacle MSI installer returned exit code $msiExitCode"
+    if ($msiExitCode -ne 0)
+    {
+        throw "Installation of the Tentacle MSI failed; MSIEXEC exited with code: $msiExitCode. View the log at $msiLog"
+    }
+
+    if (-not (Test-Path "$($env:SystemDrive)\Octopus")) { New-Item -type Directory "$($env:SystemDrive)\Octopus" }
+    @{ "TentacleDownloadUrl" = $actualTentacleDownloadUrl } | ConvertTo-Json | set-content "$($env:SystemDrive)\Octopus\Octopus.DSC.installstate"
+
+}
+
+function New-Tentacle
 {
     param (
         [Parameter(Mandatory=$True)]
@@ -248,102 +423,197 @@ function New-Tentacle
         [string]$apiKey,
         [Parameter(Mandatory=$True)]
         [string]$octopusServerUrl,
-        [Parameter(Mandatory=$True)]
-        [string[]]$environments,
-        [Parameter(Mandatory=$True)]
-        [string[]]$roles,
-        [int] $port,
-        [string]$DefaultApplicationDirectory
+        [Parameter(Mandatory=$False)]
+        [string[]]$environments = "",
+        [Parameter(Mandatory=$False)]
+        [string[]]$roles = "",
+        [Parameter(Mandatory=$False)]
+        [string[]]$tenants = "",
+        [Parameter(Mandatory=$False)]
+        [string[]]$tenantTags = "",
+        [Parameter(Mandatory=$False)]
+        [string]$policy,
+        [int]$port=10933,
+        [string]$displayName,
+        [string]$defaultApplicationDirectory,
+        [string]$tentacleDownloadUrl,
+        [string]$tentacleDownloadUrl64,
+        [ValidateSet("Listen", "Poll")]
+        [string]$communicationMode = "Listen",
+        [int]$serverPort=10943,
+        [ValidateSet("PublicIp", "FQDN", "ComputerName", "Custom")]
+        [string]$publicHostNameConfiguration = "PublicIp",
+        [string]$customPublicHostName,
+        [string]$tentacleHomeDirectory = "$($env:SystemDrive)\Octopus",
+        [bool]$registerWithServer = $true,
+        [Parameter(Mandatory=$False)]
+        [string]$octopusServerThumbprint
     )
- 
-    if ($port -eq 0) 
+
+    if ($port -eq 0)
     {
         $port = 10933
     }
 
-    Write-Verbose "Beginning Tentacle installation" 
-  
-    $tentacleDownloadUrl = "http://octopusdeploy.com/downloads/latest/OctopusTentacle64"
-    if ([IntPtr]::Size -eq 4) 
-    {
-        $tentacleDownloadUrl = "http://octopusdeploy.com/downloads/latest/OctopusTentacle"
-    }
+    Install-Tentacle $tentacleDownloadUrl $tentacleDownloadUrl64 $tentacleHomeDirectory
 
-    mkdir "$($env:SystemDrive)\Octopus" -ErrorAction SilentlyContinue
-
-    $tentaclePath = "$($env:SystemDrive)\Octopus\Tentacle.msi"
-    if ((test-path $tentaclePath) -ne $true) 
+    if ($communicationMode -eq "Listen")
     {
-        Write-Verbose "Downloading latest Octopus Tentacle MSI from $tentacleDownloadUrl to $tentaclePath"
-        Request-File $tentacleDownloadUrl $tentaclePath
+        $windowsFirewall = Get-Service -Name MpsSvc
+        if ($windowsFirewall.Status -eq "Running")
+        {
+            Write-Verbose "Open port $port on Windows Firewall"
+            Invoke-AndAssert { & netsh.exe advfirewall firewall add rule protocol=TCP dir=in localport=$port action=allow name="Octopus Tentacle: $Name" }
+        }
+        else
+        {
+            Write-Verbose "Windows Firewall Service is not running... skipping firewall rule addition"
+        }
     }
-  
-    Write-Verbose "Installing MSI..."
-    $msiLog = "$($env:SystemDrive)\Octopus\Tentacle.msi.log"
-    $msiExitCode = (Start-Process -FilePath "msiexec.exe" -ArgumentList "/i $tentaclePath /quiet /l*v $msiLog" -Wait -Passthru).ExitCode
-    Write-Verbose "Tentacle MSI installer returned exit code $msiExitCode"
-    if ($msiExitCode -ne 0) 
-    {
-        throw "Installation of the Tentacle MSI failed; MSIEXEC exited with code: $msiExitCode. View the log at $msiLog"
-    }
- 
-    Write-Verbose "Open port $port on Windows Firewall"
-    Invoke-AndAssert { & netsh.exe advfirewall firewall add rule protocol=TCP dir=in localport=$port action=allow name="Octopus Tentacle: $Name" }
-    
-	<#
-    $ipAddress = Invoke-RestMethod -uri http://169.254.169.254/latest/meta-data/local-ipv4
-    $ipAddress = $ipAddress.Trim()
-    Write-Verbose "Private IP address: $ipAddress"
-	#>
-
-	$ipAddress = Get-MyPublicIPAddress
-    $ipAddress = $ipAddress.Trim()
-    Write-Verbose "Public IP address: $ipAddress"
 
     Write-Verbose "Configuring and registering Tentacle"
-  
-    pushd "${env:ProgramFiles}\Octopus Deploy\Tentacle"
- 
-    $tentacleHomeDirectory = "$($env:SystemDrive)\Octopus"
+
+    Push-Location "${env:ProgramFiles}\Octopus Deploy\Tentacle"
+
     $tentacleAppDirectory = $DefaultApplicationDirectory
-    $tentacleConfigFile = "$($env:SystemDrive)\Octopus\$Name\Tentacle.config"
+    $tentacleConfigFile = "$tentacleHomeDirectory\$Name\Tentacle.config"
+    Write-Verbose "Tentacle configuration set as $tentacleConfigFile"
     Invoke-AndAssert { & .\tentacle.exe create-instance --instance $name --config $tentacleConfigFile --console }
     Invoke-AndAssert { & .\tentacle.exe configure --instance $name --home $tentacleHomeDirectory --console }
     Invoke-AndAssert { & .\tentacle.exe configure --instance $name --app $tentacleAppDirectory --console }
-    Invoke-AndAssert { & .\tentacle.exe configure --instance $name --port $port --console }
     Invoke-AndAssert { & .\tentacle.exe new-certificate --instance $name --console }
+
+    $registerArguments = @("register-with",
+                           "--instance", $name,
+                           "--server", $octopusServerUrl,
+                           "--name", $displayName,
+                           "--apiKey", $apiKey,
+                           "--force",
+                           "--console")
+
+    if (($null -ne $policy) -and ($policy -ne "")) {
+        $registerArguments += @("--policy", $policy)
+    }
+
+    if (($null -ne $octopusServerThumbprint) -and ($octopusServerThumbprint -ne "")) {
+        Invoke-AndAssert { & .\tentacle.exe configure --instance $name --trust $octopusServerThumbprint --console }
+    }
+
+    if ($CommunicationMode -eq "Listen") {
+        Invoke-AndAssert { & .\tentacle.exe configure --instance $name --port $port --console }
+        $publicHostName = Get-PublicHostName $publicHostNameConfiguration $customPublicHostName
+        Write-Verbose "Public host name: $publicHostName"
+        $registerArguments += @("--comms-style", "TentaclePassive",
+                                "--publicHostName", $publicHostName)
+    }
+    else {
+        Invoke-AndAssert { & .\tentacle.exe configure --instance $name --port $port --noListen "True" --console }
+        $registerArguments += @("--comms-style", "TentacleActive",
+                                "--server-comms-port", $serverPort)
+    }
     Invoke-AndAssert { & .\tentacle.exe service --install --instance $name --console }
 
-    $registerArguments = @("register-with", "--instance", $name, "--server", $octopusServerUrl, "--name", $env:COMPUTERNAME, "--publicHostName", $ipAddress, "--apiKey", $apiKey, "--comms-style", "TentaclePassive", "--force", "--console")
-
-    foreach ($environment in $environments) 
-    {
-        foreach ($e2 in $environment.Split(',')) 
+    if ($registerWithServer) {
+        if ($environments -ne "")
         {
-            $registerArguments += "--environment"
-            $registerArguments += $e2.Trim()
+            foreach ($environment in $environments)
+            {
+                foreach ($e2 in $environment.Split(','))
+                {
+                    $registerArguments += "--environment"
+                    $registerArguments += $e2.Trim()
+                }
+            }
         }
-    }
-    foreach ($role in $roles) 
-    {
-        foreach ($r2 in $role.Split(',')) 
+
+        if ($roles -ne "")
         {
-            $registerArguments += "--role"
-            $registerArguments += $r2.Trim()
+            foreach ($role in $roles)
+            {
+                foreach ($r2 in $role.Split(','))
+                {
+                    $registerArguments += "--role"
+                    $registerArguments += $r2.Trim()
+                }
+            }
         }
+
+        if ($tenants -ne "")
+        {
+            foreach ($tenant in $tenants)
+            {
+                foreach ($t2 in $tenant.Split(','))
+                {
+                    $registerArguments += "--tenant"
+                    $registerArguments += $t2.Trim()
+                }
+            }
+        }
+
+        if ($tenantTags -ne "")
+        {
+            foreach ($tenantTag in $tenantTags)
+            {
+                foreach ($tt2 in $tenantTag.Split(','))
+                {
+                    $registerArguments += "--tenanttag"
+                    $registerArguments += $tt2.Trim()
+                }
+            }
+        }
+
+        Write-Verbose "Registering with arguments: $registerArguments"
+        Invoke-AndAssert { & .\tentacle.exe ($registerArguments) }
+    } else {
+        Write-Verbose "Skipping registration with server as 'RegisterWithServer' is set to '$registerWithServer'"
     }
-
-    Write-Verbose "Registering with arguments: $registerArguments"
-    Invoke-AndAssert { & .\tentacle.exe ($registerArguments) } -ErrorAction SilentlyContinue
-
-    popd
-	Write-Verbose "Tentacle registration complete"
-
-	Request-CurrentPackageVersions -name $env:COMPUTERNAME -apiKey $apiKey -octopusServerUrl $octopusServerUrl -environments $environments -roles $roles
+    Pop-Location
+    Write-Verbose "Tentacle commands complete"
 }
 
+function Get-PublicHostName
+{
+    param (
+        [ValidateSet("PublicIp", "FQDN", "ComputerName", "Custom")]
+        [string]$publicHostNameConfiguration = "PublicIp",
+        [string]$customPublicHostName
+    )
+    if ($publicHostNameConfiguration -eq "Custom")
+    {
+        $publicHostName = $customPublicHostName
+    }
+    elseif ($publicHostNameConfiguration -eq "FQDN")
+    {
+        $computer = Get-CimInstance win32_computersystem
+        $publicHostName = "$($computer.DNSHostName).$($computer.Domain)"
+    }
+    elseif ($publicHostNameConfiguration -eq "ComputerName")
+    {
+        $publicHostName = $env:COMPUTERNAME
+    }
+    else
+    {
+        $publicHostName = Get-MyPublicIPAddress
+    }
+    $publicHostName = $publicHostName.Trim()
+    return $publicHostName
+}
 
-function Remove-TentacleRegistration 
+function Get-TentacleDownloadUrl
+{
+    param (
+        [string]$tentacleDownloadUrl,
+        [string]$tentacleDownloadUrl64
+    )
+
+    if ([IntPtr]::Size -eq 4)
+    {
+        return $tentacleDownloadUrl
+    }
+    return $tentacleDownloadUrl64
+}
+
+function Remove-TentacleRegistration
 {
     param (
         [Parameter(Mandatory=$True)]
@@ -353,97 +623,18 @@ function Remove-TentacleRegistration
         [Parameter(Mandatory=$True)]
         [string]$octopusServerUrl
     )
-  
+
     $tentacleDir = "${env:ProgramFiles}\Octopus Deploy\Tentacle"
-    if ((test-path $tentacleDir) -and (test-path "$tentacleDir\tentacle.exe")) 
+    if ((test-path $tentacleDir) -and (test-path "$tentacleDir\tentacle.exe"))
     {
-        Write-Verbose "Beginning Tentacle deregistration" 
+        Write-Verbose "Beginning Tentacle deregistration"
         Write-Verbose "Tentacle commands complete"
-        pushd $tentacleDir
+        Push-Location $tentacleDir
         Invoke-AndAssert { & .\tentacle.exe deregister-from --instance "$name" --server $octopusServerUrl --apiKey $apiKey --console }
-        popd
+        Pop-Location
     }
-    else 
+    else
     {
         Write-Verbose "Could not find Tentacle.exe"
     }
-}
-
-function Request-CurrentPackageVersions
-{
- param (
-        [Parameter(Mandatory=$True)]
-        [string]$name,
-        [Parameter(Mandatory=$True)]
-        [string]$apiKey,
-        [Parameter(Mandatory=$True)]
-        [string]$octopusServerUrl,
-        [Parameter(Mandatory=$True)]
-        [string[]]$environments,
-        [Parameter(Mandatory=$True)]
-        [string[]]$roles
-    )
-
-	Write-Verbose "Requesting deployments for releases that should be on this tentacle"
-
-	$machine = Get-OctopusMachine -machineName $name -octopusServerUrl $octopusServerUrl -apiKey $apiKey
-    if (-Not $machine){
-        write-error "Could not find octopus machine $name"
-        return
-    }
-	$octopusEnvironments =  Invoke-RestMethod -Method Get -Uri "$octopusServerUrl/api/environments/all" -Header @{"X-Octopus-ApiKey"=$apiKey} -Verbose
-    foreach ($environment in $environments)
-    {
-		$octopusEnvironment = $octopusEnvironments | Where-Object { $PSItem.Name -eq $environment} | select Id -First 1
-		$octopusDashboard = Invoke-RestMethod -Method Get -Uri "$octopusServerUrl/api/dashboard" -Header @{"X-Octopus-ApiKey"=$apiKey} -Verbose
-		$itemsToDeploy = $octopusDashboard.Items | ? {$PSItem.EnvironmentId -eq $octopusenvironment.Id}
-		foreach ($item in $itemsToDeploy)
-		{
-			$body = @{}
-			$body.Comments = "Deployment triggered by Octopus DSC"
-			$body.EnvironmentId = $item.EnvironmentId
-			$body.ReleaseId = $item.ReleaseId
-			$body.SpecificMachineIds = @($machine.Id)
-			$json = $body | ConvertTo-Json
-			Write-Verbose "Requesting deployment: $json"
-			Invoke-RestMethod -Method Post -Uri "$octopusServerUrl/api/deployments" -body $json -Header @{"X-Octopus-ApiKey"=$apiKey} -Verbose
-		}
-	}
-}
-
-function Get-OctopusMachine
-{
-	param (
-        [Parameter(Mandatory=$True)]
-        [string]$machineName,
-        [Parameter(Mandatory=$True)]
-        [string]$apiKey,
-        [Parameter(Mandatory=$True)]
-        [string]$octopusServerUrl
-	)
-
-	$skip = 0
-	while ($true)
-	{
-		$machines = Invoke-RestMethod -Method Get -Uri "$octopusServerUrl/api/machines/all?skip=$skip" -Header @{"X-Octopus-ApiKey"=$apiKey} -Verbose
-
-       if ($machines.Length -eq 0)
-		{
-			return $null
-		}
-
-		foreach ($machine in $machines)
-		{
-			if ($machine.Name -eq $machineName)
-			{
-				return $machine
-			}
-		}
-
-        if ($machines.Count -lt 30)
-        {
-            return $null
-        }
-		$skip = $skip + 30
-	}
 }

@@ -18,7 +18,7 @@ Configuration ConfigureWebserver
 	{
 		LocalConfigurationManager
 		{
-			RebootNodeIfNeeded = 'True'
+			RebootNodeIfNeeded = $True
 		}
 
         WinServerOptions ServerOptions
@@ -130,7 +130,7 @@ Configuration ConfigureWebserver
 			Description           = "Inbound access for web requests"   
 		}
 
-		cTentacleAgent OctopusTentacle 
+        cTentacleAgent OctopusTentacle 
 		{ 
 			Ensure           = "Present"
 			State            = "Started"

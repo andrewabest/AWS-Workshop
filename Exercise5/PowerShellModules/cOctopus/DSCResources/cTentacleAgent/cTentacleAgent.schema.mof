@@ -1,14 +1,27 @@
-[ClassVersion("1.0.0"), FriendlyName("cTentacleAgent")] 
+[ClassVersion("1.0.0"), FriendlyName("cTentacleAgent")]
 class cTentacleAgent : OMI_BaseResource
 {
   [Key] string Name;
-  [Write,ValueMap{"Present", "Absent"},Values{"Present", "Absent"}] string Ensure;
-  [Write,ValueMap{"Started","Stopped"},Values{"Started", "Stopped"}] string State;
+  [Write, ValueMap{"Present", "Absent"}, Values{"Present", "Absent"}] string Ensure;
+  [Write, ValueMap{"Started", "Stopped"}, Values{"Started", "Stopped"}] string State;
 
+  [Write, ValueMap{"Listen", "Poll"}, Values{"Listen", "Poll"}] string CommunicationMode;
   [Write] string ApiKey;
   [Write] string OctopusServerUrl;
+  [Write] string DisplayName;
+  [Write] string Policy;
   [Write] string Environments[];
   [Write] string Roles[];
+  [Write] string Tenants[];
+  [Write] string TenantTags[];
   [Write] UInt32 ListenPort;
+  [Write] UInt32 ServerPort;
   [Write] string DefaultApplicationDirectory;
+  [Write] string TentacleDownloadUrl;
+  [Write] string TentacleDownloadUrl64;
+  [Write, ValueMap{"PublicIp", "FQDN", "ComputerName", "Custom"}, Values{"PublicIp", "FQDN", "ComputerName", "Custom"}] string PublicHostNameConfiguration;
+  [Write] string CustomPublicHostName;
+  [Write] string TentacleHomeDirectory;
+  [Write] Boolean RegisterWithServer;
+  [Write] String OctopusServerThumbprint;
 };
