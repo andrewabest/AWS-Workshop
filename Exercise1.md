@@ -18,8 +18,8 @@ In this exercise we will be provisioning an EC2 instance by hand to build some f
  4. Ensure it is on the *CloudFormawesome* VPC, in the *DMZ B* subnet
  5. Ensure it is assigned a public IP address
  6. Provision a 50 gigabyte *General Purpose* SSD to be used
- 7. Tag the instance with a key of "Name", and value of "{yourinitials}-WebServer"
- 8. Create a new security group named {yourinitials}-WebServer-SecurityGroup
+ 7. Tag the instance with a key of "Name", and value of "{yourinitials}-WebServer-Manual"
+ 8. Create a new security group named {yourinitials}-WebServer-Manual-SecurityGroup
  9. Given we are going to be using the instance to host a web site, need to remote to it to configure a tentacle, and Octopus needs to talk to it, assign inbound access rules for all IP addresses to ports 80 and 3389, and for the VPC IP range to 10933
  10. GO GO GO! (Review, then click Launch)
  11. You will be prompted for a key pair that will be used to generate the instance's administrator password. Select the AwsDayKeyPair
