@@ -29,7 +29,7 @@ In this exercise we will take a fleshed out web server CloudFormation template, 
 12. Open the CloudFormation console in AWS and monitor your stack's creation
 13. If it fails, troubleshooting time! Pick your troubleshooting buddy and get it sorted
 14. If it succeeds, open up the EC2 console and remote into one of your instances
-15. Open c:\cfn\logs\cfn-init.log
+15. Open c:\cfn\log\cfn-init.log
 16. Can you see your DSC output inside it? Are there any errors, or does everything look good? 
 
 ### Gotcha
